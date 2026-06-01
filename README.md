@@ -1,5 +1,5 @@
 # Reinforcement Learning with DDPG (Deep Deterministic Policy Gradient)
-Using the power of DQNs, this 2D car learns to drive (by steering the wheel) and follow the track without crashing.
+Using the power of DDPG, this 2D car learns to drive (by steering the wheel) and follow the track without crashing.
 Implemented with 4 neural networks: 2 networks for the **Actor** and 2 for the **Critic**. 
 
 Updates are done on the Critic using the classic Bellman equation: Q(s,a) = r + gamma * max(Q(S',a')).

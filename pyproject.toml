@@ -1,0 +1,18 @@
+[project]
+name = "car"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.10.9",
+    "numpy>=2.4.6",
+    "py2app>=0.28.10",
+    "pygame>=2.6.1",
+    "pyglet>=2.1.14",
+    "pyinstaller>=6.20.0",
+    "pyobjc>=12.1",
+    "torch>=2.12.0",
+    "torchaudio>=2.11.0",
+    "torchvision>=0.27.0",
+]

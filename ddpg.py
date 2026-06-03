@@ -139,8 +139,8 @@ class CarDDPG:
             env.FPS = env.FPS * 1.05
             print(f"Episode: {episode}")
 
-            render_this_episode = 0 <= (episode + 1) % 100 < 3
-            # render_this_episode = True
+            # render_this_episode = 0 <= (episode + 1) % 100 < 3
+            render_this_episode = True
             if render_this_episode:
                 env.init_display()
             else:
@@ -299,6 +299,8 @@ class CarDDPG:
         # At this point the critic has learned a slightly better approximation of Q(s,a)
 
         # --- Actor update part ---
+        # The objective is: for each state, choose an action that maximises the Q‑value estimated by the critic. We therefore want to perform gradient ascent on Q(s, (actor(s)))
+
         # Let actor choose actions
         pred_actions = actor(states) # These are the actions the actor currently thinks are best
 
@@ -307,9 +309,12 @@ class CarDDPG:
             states,
             pred_actions
         )
+        # q_values will be connected to both the critic parameters and the actor parameters (through pred_actions).
 
-        actor_loss = -q_values.mean() # fucking black magic here, very fucking confusing
-        # to check how the fuck does this work and add notes here
+        # In PyTorch we do gradient descent, so we need to minimise the negative (thus maximizing Q-values):
+        actor_loss = -q_values.mean()
+        # Negating and taking the mean gives a scalar actor_loss.
+        # To use the loss for backprop, it always has to be a scalar. This is why we used .mean()
 
         # Equivalent to
         # actor_loss = -critic(
@@ -318,8 +323,16 @@ class CarDDPG:
         # ).mean()
 
         self.actor_optimizer.zero_grad()
+        # actor_loss.backward() will compute gradients for both the actor and the critic parameters because both were part of the computation graph. The critic's .grad will now contain ∂(actor_loss)/∂(critic_params)
+        # BUT we do NOT call critic_optimizer.step() here. Those gradients just sit in the critic’s .grad until the next training step, where critic_optimizer.zero_grad() is called before the critic update, wiping them out.
+        # The important part: gradients flow from actor_loss back through the critic's layers into pred_actions, and from there into the actor's parameters.
         actor_loss.backward()
         self.actor_optimizer.step()
+
+        # .backward() is not tied to loss functions like mse_loss(). It’s a fundamental method of any scalar tensor that is part of a computation graph.
+
+        # Any differentiable scalar expression can serve as a loss. The "loss" is just the quantity we want to minimise.
+        # Here we want to maximise Q, so we minimise -Q. This scalar is perfectly valid input to .backward(). The chain rule does the rest.
 
         # Suppose for a particular state the actor chooses an action and critic calculates the Q-value:
         # action = -0.3, Q = 5
@@ -342,7 +355,7 @@ class CarDDPG:
         actor = Actor(num_states_for_actor, HIDDEN_NODES, HIDDEN_NODES, 1)
         # critic = Critic(num_states_for_critic, HIDDEN_NODES, HIDDEN_NODES, 1)
 
-        actor.load_state_dict(torch.load("car_ddpg_actor_test.pt"))
+        actor.load_state_dict(torch.load("car_ddpg_actor_good.pt"))
 
         while True:
             env.init_display()
